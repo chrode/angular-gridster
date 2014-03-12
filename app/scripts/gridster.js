@@ -719,7 +719,7 @@ angular.module('gridster', [])
 	};
 })
 
-.directive('gridsterItem', ['$parse', '$controller', '$timeout', function($parse, $controller, $timeout) {
+.directive('gridsterItem', ['$parse', '$controller', '$timeout', '$rootScope', function($parse, $controller, $timeout, $rootScope) {
 	return {
 		restrict: 'EAC',
 		require: '^gridster',
@@ -964,6 +964,14 @@ angular.module('gridster', [])
 			$timeout(function(){
 				$el.removeClass('gridster-item-moving');
 			}, 100);
+
+            $el.bind('dragstart', function(e) {
+                $rootScope.$emit('GRIDSTER-DRAG-START');
+            });
+
+            el.bind('dragend', function() {
+                $rootScope.$emit('GRIDSTER-DRAG-END');
+            });
 
 			return $el.bind('$destroy', function() {
 				try {
