@@ -46,7 +46,10 @@ angular.module('gridster', [])
 			},
 			draggable: {
 				enabled: true
-			}
+			},
+            noFloatingUp : false,
+            noFloatingLeft : false,
+            containment : ''
 		},
 		width: 1000,
 		columns: 5,
@@ -252,7 +255,7 @@ angular.module('gridster', [])
 					break;
 				}
 			}
-			this.floatItemsUp();
+			this.floatItems();
 			updateHeight();
 		},
 		getItem: function(row, column, excludeItems) {
@@ -335,8 +338,40 @@ angular.module('gridster', [])
 				item.sizeY,
 				item
 			);
-			this.moveItemsDown(items, item.row + item.sizeY);
+
+            if((this.opts.maxRows ? this.opts.maxRows : this.opts.maxGridRows) < item.row + item.sizeY) {
+                this.moveItemsDown(items, item.row + item.sizeY);
+            } else {
+                this.moveItemsRight(items, item.col + item.sizeX);
+            }
+
 		},
+
+        moveItemsRight: function(items, toCol) {
+            if (!items || items.length === 0) {
+                return;
+            }
+            var topCols = {}, item, i, l;
+            // calculate the top cols in each column
+            for (i = 0, l = items.length; i < l; ++i) {
+                item = items[i];
+                var topCol = topCols[item.row];
+                if (typeof topCol === 'undefined' || item.col < topCol) {
+                    topCols[item.row] = item.col;
+                }
+            }
+            // move each item down from the top col in its row to the toCol
+            for (i = 0, l = items.length; i < l; ++i) {
+                item = items[i];
+                var rowOffset = toCol - topCols[item.row];
+                this.putItem(
+                    item,
+                    item.row ,
+                    item.col + rowOffset
+                );
+            }
+        },
+
 		moveItemsDown: function(items, toRow) {
 			if (!items || items.length === 0) {
 				return;
@@ -361,18 +396,26 @@ angular.module('gridster', [])
 				);
 			}
 		},
-		floatItemsUp: function() {
-			for (var rowIndex = 0, l = this.grid.length; rowIndex < l; ++rowIndex) {
-				var columns = this.grid[rowIndex];
-				if (!columns) {
-					continue;
-				}
-				for (var colIndex = 0, len = columns.length; colIndex < len; ++colIndex) {
-					if (columns[colIndex]) {
-						this.floatItemUp(columns[colIndex]);
-					}
-				}
-			}
+
+		floatItems: function() {
+            for (var rowIndex = 0, l = this.grid.length; rowIndex < l; ++rowIndex) {
+                var columns = this.grid[rowIndex];
+                if (!columns) {
+                    continue;
+                }
+                for (var colIndex = 0, len = columns.length; colIndex < len; ++colIndex) {
+                    if (columns[colIndex]) {
+                        if(!this.opts.noFloatingUp) {
+                            this.floatItemUp(columns[colIndex]);
+                        }
+
+                        if(!this.opts.noFloatingLeft) {
+                            this.floatItemLeft(columns[colIndex]);
+                        }
+
+                    }
+                }
+            }
 		},
 		floatItemUp: function(item) {
 			var colIndex = item.col,
@@ -394,6 +437,27 @@ angular.module('gridster', [])
 				this.putItem(item, bestRow, bestColumn);
 			}
 		},
+        floatItemLeft: function(item) {
+            var rowIndex = item.row,
+                sizeY = item.sizeY,
+                sizeX = item.sizeX,
+                bestRow = null,
+                bestColumn = null,
+                colIndex = item.col;
+            while (colIndex > -1) {
+                var items = this.getItems(rowIndex, colIndex, sizeX, sizeY, item);
+                if (items.length !== 0) {
+                    break;
+                }
+                bestRow = rowIndex;
+                bestColumn = colIndex;
+                --colIndex;
+            }
+            if (bestRow !== null) {
+                this.putItem(item, bestRow, bestColumn);
+            }
+
+        },
 		updateHeight: function(plus) {
 			var maxHeight = this.opts.minGridRows;
 			if (!plus) {
@@ -547,7 +611,9 @@ angular.module('gridster', [])
 						updateHeight();
 						scope.$broadcast('gridster-resized', [width, $elem.height()]);
 						$elem.addClass('gridster-loaded');
-						scope.$apply();
+                        if(scope.$$phase !== '$digest') {
+                            scope.$apply();
+                        }
 					}
 
 					angular.element(window).on('resize', resize);
@@ -566,7 +632,7 @@ angular.module('gridster', [])
 					controller.redraw();
 
 					$timeout(function(){
-						controller.floatItemsUp();
+						controller.floatItems();
 						$elem.addClass('gridster-loaded');
 					}, 100);
 				}
@@ -605,7 +671,7 @@ angular.module('gridster', [])
 		},
 		setPosition: function (row, column) {
 			this.gridster.putItem(this, row, column);
-			this.gridster.floatItemsUp();
+			this.gridster.floatItems();
 			this.gridster.updateHeight(this.dragging ? this.sizeY : 0);
 
 			if (this.dragging) {
@@ -640,7 +706,7 @@ angular.module('gridster', [])
 			}
 			if (changed) {
 				this.gridster.moveOverlappingItems(this);
-				this.gridster.floatItemsUp();
+				this.gridster.floatItems();
 				this.gridster.updateHeight(this.dragging ? this.sizeY : 0);
 			}
 		},
@@ -691,8 +757,8 @@ angular.module('gridster', [])
 					if(enable) {
 						$el.draggable({
 							handle: gridster.opts.draggable && gridster.opts.draggable.handle ? gridster.opts.draggable.handle : null,
-			//				containment: '.gridster',
-							refreshPositions: true,
+							containment: gridster.opts.containment,
+                            refreshPositions: true,
 							start: function(e, widget) {
 								$el.addClass('gridster-item-moving');
 								item.dragging = true;
