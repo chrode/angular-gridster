@@ -611,12 +611,12 @@ angular.module('gridster', [])
 						updateHeight();
 						scope.$broadcast('gridster-resized', [width, $elem.height()]);
 						$elem.addClass('gridster-loaded');
-                        if(scope.$$phase !== '$digest') {
-                            scope.$apply();
-                        }
 					}
 
-					angular.element(window).on('resize', resize);
+					angular.element(window).on('resize', function(){
+						resize();
+						scope.$apply();
+					});
 					scope.$watch(function() {
 						return $elem.width();
 					}, resize);
@@ -671,7 +671,7 @@ angular.module('gridster', [])
 		},
 		setPosition: function (row, column) {
 			this.gridster.putItem(this, row, column);
-			this.gridster.floatItems();
+			this.gridster.floatItemsUp();
 			this.gridster.updateHeight(this.dragging ? this.sizeY : 0);
 
 			if (this.dragging) {
@@ -804,7 +804,7 @@ angular.module('gridster', [])
 					}
 				}
 			}
-			
+
 			function updateResizableDimensions(enabled) {
 				if(resizablePossible && enabled) {
 					$el.resizable( "option", "minHeight", (gridster.minRows ? gridster.minRows : 1) * gridster.rowHeight - gridster.margins[0] );
