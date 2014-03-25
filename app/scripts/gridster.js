@@ -533,9 +533,6 @@ angular.module('gridster', [])
 		compile: function compile(tElement, tAttrs, transclude) {
 			return {
 				pre: function(scope, $elem, attrs, controller) {
-					function updateHeight() {
-						controller.$element.css('height', (controller.gridHeight * controller.rowHeight) + controller.margins[0] + 'px');
-					}
 
 					var optsKey = attrs.gridster,
 						opts = {};
@@ -566,7 +563,7 @@ angular.module('gridster', [])
 							}
 
 							controller.redraw();
-							updateHeight();
+                            controller.updateHeight();
 						}, true);
 					}
 
