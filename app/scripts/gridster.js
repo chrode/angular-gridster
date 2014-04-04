@@ -966,7 +966,7 @@ angular.module('gridster', [])
                 $rootScope.$emit('GRIDSTER-DRAG-START');
             });
 
-            $el.bind('dragend', function() {
+            $el.bind('dragstop', function() {
                 $rootScope.$emit('GRIDSTER-DRAG-END');
             });
 
