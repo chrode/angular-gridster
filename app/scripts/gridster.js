@@ -764,21 +764,26 @@ angular.module('gridster', [])
 								gridster.setElementSizeY(gridster.$preview, item.sizeY);
 								gridster.setElementPosition(gridster.$preview, item.row, item.col);
 								gridster.updateHeight(item.sizeY);
-								scope.$apply();
 								if (gridster.opts.draggable && gridster.opts.draggable.start) {
 									gridster.opts.draggable.start(e, widget, $el);
-									scope.$apply();
 								}
+                                scope.$apply();
 							},
-							drag: function(e, widget) {
-								item.row = gridster.pixelsToRows(widget.position.top);
-								item.col = gridster.pixelsToColumns(widget.position.left);
-								scope.$apply();
-								if (gridster.opts.draggable && gridster.opts.draggable.drag) {
-									gridster.opts.draggable.drag(e, widget, $el);
-									scope.$apply();
-								}
-							},
+                            drag: function(e, widget) {
+                                var oldItem = {
+                                    row : angular.copy(item.row),
+                                    col : angular.copy(item.col)
+                                };
+
+                                item.row = gridster.pixelsToRows(widget.position.top);
+                                item.col = gridster.pixelsToColumns(widget.position.left);
+                                if(item.row !== oldItem.row || item.col !== oldItem.col) {
+                                    if (gridster.opts.draggable && gridster.opts.draggable.drag) {
+                                        gridster.opts.draggable.drag(e, widget, $el);
+                                    }
+                                    scope.$apply();
+                                }
+                            },
 							stop: function (e, widget) {
 								$el.removeClass('gridster-item-moving');
 								item.row = gridster.pixelsToRows(widget.position.top);
@@ -787,11 +792,10 @@ angular.module('gridster', [])
 								gridster.$preview.hide();
 								item.setPosition(item.row, item.col);
 								gridster.updateHeight();
-								scope.$apply();
 								if (gridster.opts.draggable && gridster.opts.draggable.stop) {
 									gridster.opts.draggable.stop(e, widget, $el);
-									scope.$apply();
 								}
+                                scope.$apply();
 							}
 						});
 					} else {
