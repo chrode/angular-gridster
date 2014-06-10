@@ -973,7 +973,7 @@ angular.module('gridster', [])
             $el.bind('dragstop', function() {
                 $timeout(function(){
                     $rootScope.$emit('GRIDSTER-DRAG-END');
-                }, 100);
+                }, 200);
             });
 
 			return $el.bind('$destroy', function() {
